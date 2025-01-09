@@ -12,7 +12,7 @@
 #include <assert.h>
 #include <string.h>
 
-// TCP socketsincludes
+// TCP sockets includes
 #include <chrono>
 #include <thread>
 #include <unistd.h>
@@ -31,13 +31,13 @@
 #define close_socket(s) close(s)
 #endif
 
-// tcpserver header
+// CServerTCP header
 #include "CServerTCP.h"
 
 using std::string, std::cout, std::endl;
 
 // TCP SERVER MANAGER IMPLEMENTATION
-void tcpServer::DefineSocket()
+void CServerTCP::DefineSocket()
 {
     // Create socket
     // NOTE: AF_INET --> IPv4, SOCK_STREAM --> TCP
@@ -64,11 +64,12 @@ void tcpServer::DefineSocket()
  * @author Pietro Califano
  * @date 2024-06-03
  */
-void tcpServer::BindSocket()
+void CServerTCP::BindSocket()
 {
     // Bind socket to server address
     serverInitStatusCode_ = bind(serverSocketDescriptor_, (struct sockaddr *)&serverAddr_, sizeof(serverAddr_));
 
+    // Throw exception if binding fails
     if (serverInitStatusCode_ < 0)
     {
         std::__throw_runtime_error("Socket binding has failed. Execution stop.");
@@ -80,7 +81,7 @@ void tcpServer::BindSocket()
  * @author Pietro Califano
  * @date 2024-06-03
  */
-void tcpServer::ListenToConnection()
+void CServerTCP::ListenToConnection()
 {
     serverInitStatusCode_ = listen(serverSocketDescriptor_, MAX_NUM_OF_CLIENTS);
     if (serverInitStatusCode_ < 0)
@@ -95,7 +96,7 @@ void tcpServer::ListenToConnection()
  * @date 2024-06-16
  * @return int
  */
-void tcpServer::Initialize()
+void CServerTCP::Initialize()
 {
     cout << "\nInitializing server... " << endl;
     // Define socket
@@ -116,7 +117,7 @@ void tcpServer::Initialize()
  * @author Pietro Califano
  * @date 2024-06-03
  */
-int tcpServer::AcceptConnections()
+int CServerTCP::AcceptConnections()
 {
     while (true && serverSocketDescriptor_ > 0)
     {
@@ -184,7 +185,7 @@ int tcpServer::AcceptConnections()
  * @param clientSocketDescriptor
  * @return int
  */
-int tcpServer::HandleClientRequest(int clientSocketDescriptor)
+int CServerTCP::HandleClientRequest(int clientSocketDescriptor)
 {
 
     // Read buffer data from client as raw bytes stream
@@ -221,7 +222,7 @@ int tcpServer::HandleClientRequest(int clientSocketDescriptor)
  * @return char
  * // TODO (PC) Templatize this using variadic and make virtual (tag dispatching?)
  */
-void tcpServer::ProcessHardWiredMsg()
+void CServerTCP::ProcessHardWiredMsg()
 {
     bool isValid = false;
     // Check enum type and related expected message length
@@ -256,7 +257,7 @@ void tcpServer::ProcessHardWiredMsg()
  * @return false
  * // TODO (PC) Templatize this using variadic and make virtual (tag dispatching?)
  */
-bool tcpServer::ValidateReadBufferLength(int expectedBufferSize)
+bool CServerTCP::ValidateReadBufferLength(int expectedBufferSize)
 {
     return (lastMessageSize_ == expectedBufferSize) ? true : false;
 };
@@ -269,7 +270,7 @@ bool tcpServer::ValidateReadBufferLength(int expectedBufferSize)
  * @return false
  * // TODO (PC) Templatize this using variadic and make virtual (tag dispatching?)
  */
-bool tcpServer::ValidateWriteBufferLength(int expectedBufferSize)
+bool CServerTCP::ValidateWriteBufferLength(int expectedBufferSize)
 {
     // NOTE: bufferToSendSize_ -8 to exclude the first 8 bytes of the buffer (length and commMode)
     return ((bufferToSendSize_ - 8) == expectedBufferSize) ? true : false;
@@ -281,7 +282,7 @@ bool tcpServer::ValidateWriteBufferLength(int expectedBufferSize)
  * @date 
  * // TODO (PC) Make this function generic
  */
-void tcpServer::ReadBufferData()
+void CServerTCP::ReadBufferData()
 {
     // Receive data from client
     ssize_t totalPayloadBytesReceived = 0.0;
@@ -356,7 +357,7 @@ void tcpServer::ReadBufferData()
  * @date 
  * // TODO (PC) Make this function generic
  */
-void tcpServer::WriteBufferData()
+void CServerTCP::WriteBufferData()
 {
     // Receive data from client
     size_t numOfWrittenBytes = 0.0;
@@ -402,7 +403,7 @@ void tcpServer::WriteBufferData()
  * @date 2024-06-19
  */
 // DEVNOTE: Not sure this is required by generic implementation
-//void tcpServer::CleanTempData()
+//void CServerTCP::CleanTempData()
 //{
 //    cout << "Cleaning temporary data after request handling..." << endl;
 //    // Clear temp data by resetting to default values

@@ -1,5 +1,5 @@
 /**
- * @file tcpServer.hpp
+ * @file CServerTCP.hpp
  * @author PeterC (petercalifano.gs@gmail.com)
  * @brief
  * @version 0.1
@@ -46,14 +46,14 @@
 // Aliases
 using std::string, std::cout, std::endl;
 
-class tcpServer
+class CServerTCP
 {
 public:
     // CONSTRUCTOR, DEVNOTE: does this work? It should create a unique pointer to controller API within the server object
-    tcpServer(int portNumber_in) : portNumber_(portNumber_in) {};
+    CServerTCP(int portNumber_in) : portNumber_(portNumber_in) {};
 
     // DESTRUCTOR
-    ~tcpServer()
+    ~CServerTCP()
     {
         // Server shutdown if open
         if (serverSocketDescriptor_ >= 0)
