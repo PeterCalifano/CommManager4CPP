@@ -1,0 +1,3 @@
+[submodule "lib/matlab-protobuf-tools"]
+	path = lib/matlab-protobuf-tools
+	url = git@gitlab.polimi.it:DAER/DART/generic-tools/matlab-protobuf-tools.git
