@@ -4,7 +4,7 @@ file(GLOB srcExampleFiles RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${EXAMPLES_PATTER
 message("Examples files found: ${srcExampleFiles}")
 
 # Exclude EXCLUDED_LIST from the list of examples
-set(EXCLUDED_LIST "example_ChristianVOmeas.cpp")
+set(EXCLUDED_LIST "")
 list(REMOVE_ITEM srcExampleFiles ${EXCLUDED_LIST})
 
 # Add to build and link
