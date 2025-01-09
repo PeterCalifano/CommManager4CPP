@@ -63,21 +63,15 @@ public:
     };
 
     // DATA MEMBERS
-    enum class commModeType
+    enum class CommModeType
     {
         SHUTDOWN = -1,
         PROTOBUF = 0,
-        HARDWIRED_GOTOPOSE = 1,
-        HARDWIRED_READPOSE = 2,
-        HARDWIRED_GOTOHOME = 3
+        HARDWIRED_ID_EXAMPLE = 1
     };
 
     enum class HARDWIRED_MSG_SIZE
     {
-        GOTOPOSE = 304,
-        READPOSE = 292,
-        GOTOJOINTS = 208,
-        READJOINTS = 196
     };
     // METHODS
 
@@ -113,7 +107,7 @@ private:
     int serverInitStatusCode_ = -1; // Default status code before server initialization: not initialized
     int lastMessageSize_ = 0;
     int portNumber_ = 55555;
-    commModeType commMode = commModeType::PROTOBUF; // Default communication mode
+    CommModeType commMode = CommModeType::PROTOBUF; // Default communication mode
 
     int bufferToReceiveSize_ = 0;
     int bufferToSendSize_ = 0;

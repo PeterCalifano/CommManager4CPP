@@ -194,12 +194,12 @@ int tcpServer::HandleClientRequest(int clientSocketDescriptor)
     // Process buffer depending on communication mode
 
     // PaylcheckForShutdownBufferoad data processing based on communication mode
-    if (commMode == commModeType::PROTOBUF)
+    if (commMode == CommModeType::PROTOBUF)
     {
         cout << "ENTERING --> PROTOBUF MODE" << endl;
         // PROTOBUF MODE
     }
-    else if (commMode != commModeType::PROTOBUF)
+    else if (commMode != CommModeType::PROTOBUF)
     {
         cout << "ENTERING --> HARDWIRED MESSAGE MODE" << endl;
         // HARDWIRED MESSAGE: Call hardwired messages deserialized
@@ -223,17 +223,13 @@ int tcpServer::HandleClientRequest(int clientSocketDescriptor)
  */
 void tcpServer::ProcessHardWiredMsg()
 {
-    bool isValid;
+    bool isValid = false;
     // Check enum type and related expected message length
     switch (commMode)
     {
-    case commModeType::HARDWIRED_GOTOPOSE:
+    case CommModeType::HARDWIRED_ID_EXAMPLE:
 
     { // Single Joint Motion command to move to a specified pose
-        int expectedSize_POSE = (int)HARDWIRED_MSG_SIZE::GOTOPOSE;
-        int expectedSize_JOINTS = (int)HARDWIRED_MSG_SIZE::GOTOJOINTS;
-
-        isValid = ValidateReadBufferLength(expectedSize_POSE) || ValidateReadBufferLength(expectedSize_JOINTS);
 
         if (isValid)
         {
@@ -241,52 +237,13 @@ void tcpServer::ProcessHardWiredMsg()
         }
         else
         {
-            cout << "\nMessage size validation failed. Valid sizes: JOINTS:" << expectedSize_JOINTS << ", POSE: " << expectedSize_POSE << ". Received size:" << lastMessageSize_ << endl;
+            //cout << "\nMessage size validation failed. Valid sizes: JOINTS:" << expectedSize_JOINTS << ", POSE: " << expectedSize_POSE << ". Received size:" << lastMessageSize_ << endl;
         }
-        break;
-    }
-    case commModeType::HARDWIRED_READPOSE:
-    { // Read position data from controller and send it back to client
-        // int expectedSize = HARDWIRED_MSG_SIZE::READPOSE;
-        int expectedSize = 4;
-        isValid = ValidateReadBufferLength(expectedSize);
-
-        if (isValid)
-        {
-            cout << "Received payload message size: " << lastMessageSize_ << " VALID... executing request: READPOSE" << endl;
-            // Read position and serialize buffer to send to client
-            cout << "Asking data to ControllerAPI... ";
-
-        }
-        else
-        {
-            cout << "\nMessage size validation failed. Expected size: " << expectedSize << ". Received size: " << lastMessageSize_ << endl;
-        }
-
-        break;
-    }
-    case commModeType::HARDWIRED_GOTOHOME:
-    {
-        // Command to automatically send all motion groups back to their home position
-
-        // int expectedSize = HARDWIRED_MSG_SIZE::GOTOHOME;
-        int expectedSize = 0;
-        isValid = ValidateReadBufferLength(expectedSize);
-
-        if (isValid)
-        {
-
-        }
-        else
-        {
-            cout << "\nMessage size validation failed. Expected size: " << expectedSize << ". Received size: " << lastMessageSize_ << endl;
-        }
-
         break;
     }
     default:
     {
-        std::__throw_runtime_error("Communication mode not matching any of the allowed hardwired messages!");
+        std::__throw_runtime_error("Message ID not matching any of the allowed hardwired messages!");
     }
     };
 };
@@ -344,12 +301,12 @@ void tcpServer::ReadBufferData()
         cout << "\tReading buffer from client... \n\tGot length of message. Receiving payload of length: " << bufferToReceiveSize_ - 4 << endl;
 
         // Read 4 bytes for communication mode specifier
-        char commModeBuffer[4];
+        //char commModeBuffer[4];
         recv(clientSocketDescriptor_, &commMode, 4, 0);
 
         cout << "\tClient specified commMode: " << (int)commMode << endl;
 
-        if (commMode == commModeType::SHUTDOWN)
+        if (commMode == CommModeType::SHUTDOWN)
         {
             // Shutdown command received -_> start server shutdown procedure
             cout << "Server shutdown command received... Closing server." << endl;
@@ -378,7 +335,7 @@ void tcpServer::ReadBufferData()
                 cout << "Client disconnected." << endl; // What? really needed? Shouldn't this be overriden by any other code pathway?
                 isClientConnected = false;
             }
-            else if (numOfPayloadReadBytes > 0)
+            else
             { // Increase counter of received bytes
                 totalPayloadBytesReceived += numOfPayloadReadBytes;
             };
@@ -402,31 +359,21 @@ void tcpServer::ReadBufferData()
 void tcpServer::WriteBufferData()
 {
     // Receive data from client
-    ssize_t numOfWrittenBytes = 0.0;
+    size_t numOfWrittenBytes = 0.0;
 
     if (isClientConnected)
     {
         bool isValid = true;
-        int expectedMsgSize;
+        int expectedMsgSize = 0;
 
-        if (commMode != commModeType::PROTOBUF)
+        if (commMode != CommModeType::PROTOBUF)
         {
             // Select expected size of the message for validation
             switch (commMode)
             {
-            case commModeType::HARDWIRED_GOTOPOSE:
+            case CommModeType::HARDWIRED_ID_EXAMPLE:
             { // NOTE: Expected size of message to send for GOTOPOSE is identical to READPOSE
-                expectedMsgSize = (int)HARDWIRED_MSG_SIZE::READPOSE;
-                break;
-            }
-            case commModeType::HARDWIRED_READPOSE:
-            {
-                expectedMsgSize = (int)HARDWIRED_MSG_SIZE::READPOSE;
-                break;
-            }
-            case commModeType::HARDWIRED_GOTOHOME:
-            {
-                expectedMsgSize = (int)HARDWIRED_MSG_SIZE::READPOSE;
+                //expectedMsgSize = (int)HARDWIRED_MSG_SIZE::READPOSE;
                 break;
             }
             }
@@ -460,7 +407,7 @@ void tcpServer::WriteBufferData()
 //    cout << "Cleaning temporary data after request handling..." << endl;
 //    // Clear temp data by resetting to default values
 //    lastMessageSize_ = 0;
-//    commMode = commModeType::PROTOBUF;
+//    commMode = CommModeType::PROTOBUF;
 //    bufferToReceiveSize_ = 0;
 //    bufferToSendSize_ = 0;
 //    memset(bufferToReceive_, 0, MAX_RECV_BUFFER_SIZE);
