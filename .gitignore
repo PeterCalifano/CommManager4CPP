@@ -1,3 +1,7 @@
+# CMake ignores
+**/build*/
+
+# CPP template ignore
 # Prerequisites
 *.d
 
