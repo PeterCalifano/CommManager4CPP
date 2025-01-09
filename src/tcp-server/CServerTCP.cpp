@@ -1,11 +1,12 @@
 /**
- * @file tcpServer.cpp
+ * @file CServerTCP.cpp
  * @author PeterC (petercalifano.gs@gmail.com)
  * @brief
  * @version 0.1
- * @date 2024-05-23
+ * @date 2025-01-09
  * @note: References: GPT4o, IBM documentation (e.g., https://www.ibm.com/docs/en/zos/3.1.0?topic=functions-bind-bind-name-socket)
  */
+
 #include <iostream>
 #include <iomanip>
 #include <assert.h>
@@ -31,21 +32,11 @@
 #endif
 
 // tcpserver header
-#include "tcpServer.hpp"
-
-// ControllerAPI header
-#include "YMConnect.h" // Include the YMConnect header file
-#include "ControllerAPI.hpp"
+#include "CServerTCP.h"
 
 using std::string, std::cout, std::endl;
 
 // TCP SERVER MANAGER IMPLEMENTATION
-/**
- * @brief
- * @author Pietro Califano
- * @date 2024-06-03
- * @test: OK
- */
 void tcpServer::DefineSocket()
 {
     // Create socket
@@ -72,7 +63,6 @@ void tcpServer::DefineSocket()
  * @brief
  * @author Pietro Califano
  * @date 2024-06-03
- * @test: OK
  */
 void tcpServer::BindSocket()
 {
@@ -89,7 +79,6 @@ void tcpServer::BindSocket()
  * @brief
  * @author Pietro Califano
  * @date 2024-06-03
- * @test: OK
  */
 void tcpServer::ListenToConnection()
 {
@@ -105,7 +94,6 @@ void tcpServer::ListenToConnection()
  * @author Pietro Califano
  * @date 2024-06-16
  * @return int
- * @test OK
  */
 void tcpServer::Initialize()
 {
@@ -127,7 +115,6 @@ void tcpServer::Initialize()
  * @brief
  * @author Pietro Califano
  * @date 2024-06-03
- * @test: OK
  */
 int tcpServer::AcceptConnections()
 {
@@ -198,7 +185,6 @@ int tcpServer::AcceptConnections()
  * @date 2024-06-16
  * @param clientSocketDescriptor
  * @return int
- * @test: PASSED, 02-07-2024
  */
 int tcpServer::HandleClientRequest(int clientSocketDescriptor)
 {
@@ -230,72 +216,12 @@ int tcpServer::HandleClientRequest(int clientSocketDescriptor)
 };
 
 /**
- * @brief
- * @author Pietro Califano
- * @date 2024-06-16
- * @param groupsPosData
- * @test: PASSED, 18-06-2024
- */
-void tcpServer::ReadAndSerializeHardWiredPoseData(std::vector<PositionData> groupsPosData)
-{
-
-    // Allocated arrays based on number on coordinate type
-    int NUM_OF_ENTRIES = groupsPosData.at(0).coordinateType == CoordinateType::Pulse ? JOINTDATA_ENTRIES : POSDATA_ENTRIES;
-    int ROW_SIZE = NUM_OF_ENTRIES * __SIZEOF_DOUBLE__;
-
-    double poseDataR1[NUM_OF_ENTRIES], poseDataR2[NUM_OF_ENTRIES], poseDataB1[NUM_OF_ENTRIES];
-
-    std::cout << "Copying data from axis data (YMConnect) to pose array of length " << NUM_OF_ENTRIES << endl;
-    if (!(groupsPosData.at(0).coordinateType == CoordinateType::Pulse))
-    {
-        // Convert PosData to EulerMatrix arrays
-        controllerInstPtr_->ConvertAxisDataToPoseArray(poseDataR1, groupsPosData[0].axisData);
-        controllerInstPtr_->ConvertAxisDataToPoseArray(poseDataR2, groupsPosData[2].axisData);
-        controllerInstPtr_->ConvertAxisDataToPoseArray(poseDataB1, groupsPosData[1].axisData);
-    }
-    else
-    {
-        // Copy data to pose arrays
-        memcpy(&poseDataR1, &groupsPosData[0].axisData, ROW_SIZE);
-        memcpy(&poseDataR2, &groupsPosData[2].axisData, ROW_SIZE);
-        memcpy(&poseDataB1, &groupsPosData[1].axisData, ROW_SIZE);
-    };
-
-    cout << "Got pose arrays from Controller. Serializing data to buffer... ";
-    // Serialize bytes stream as above but reversed) // ACHTUNG: do I need to shrink the buffer before sending it?
-    int writtenBytes = __SIZEOF_INT__;
-
-    memcpy(bufferToSend_ + writtenBytes, &commMode, __SIZEOF_INT__);
-    writtenBytes += __SIZEOF_INT__;
-
-    // Copy coordinate type information to buffer
-    memcpy(bufferToSend_ + writtenBytes, &groupsPosData[0].coordinateType, __SIZEOF_INT__);
-    writtenBytes += __SIZEOF_INT__;
-
-    // Copy position data array to buffer
-    memcpy(bufferToSend_ + writtenBytes, &poseDataR1, ROW_SIZE);
-    writtenBytes += ROW_SIZE;
-    memcpy(bufferToSend_ + writtenBytes, &poseDataR2, ROW_SIZE);
-    writtenBytes += ROW_SIZE;
-    memcpy(bufferToSend_ + writtenBytes, &poseDataB1, ROW_SIZE);
-    writtenBytes += ROW_SIZE;
-
-    // Write length of payload
-    writtenBytes -= __SIZEOF_INT__;
-    memcpy(bufferToSend_, &writtenBytes, __SIZEOF_INT__);
-
-    bufferToSendSize_ = writtenBytes + __SIZEOF_INT__;
-    cout << "Buffer ready for transmission." << endl;
-}
-
-/**
  * @brief Function to handle processing of hardwired messages supported by the server (application specific)
  * @author Pietro Califano
- * @date 2024-06-16
- * @note: No new command is foreseen for these commModes.
+ * @date 
  * @details This performs deserialization, execution of operations and serialization based on the request type from client
  * @return char
- * @test: PASSED, 02-07-2024
+ * // TODO (PC) Templatize this using variadic and make virtual (tag dispatching?)
  */
 void tcpServer::ProcessHardWiredMsg()
 {
@@ -516,7 +442,7 @@ void tcpServer::ProcessHardWiredMsg()
  * @date 2024-06-16
  * @return true
  * @return false
- * @test: PASSED, 08-06-2024
+ * // TODO (PC) Templatize this using variadic and make virtual (tag dispatching?)
  */
 bool tcpServer::ValidateReadBufferLength(int expectedBufferSize)
 {
@@ -529,7 +455,7 @@ bool tcpServer::ValidateReadBufferLength(int expectedBufferSize)
  * @date 2024-06-25
  * @return true
  * @return false
- * @test: TODO
+ * // TODO (PC) Templatize this using variadic and make virtual (tag dispatching?)
  */
 bool tcpServer::ValidateWriteBufferLength(int expectedBufferSize)
 {
@@ -540,9 +466,8 @@ bool tcpServer::ValidateWriteBufferLength(int expectedBufferSize)
 /**
  * @brief
  * @author Pietro Califano
- * @date 2024-06-16
- * @note: WIP
- * @test: PASSED for commModes > 0, 18-06-2024
+ * @date 
+ * // TODO (PC) Make this function generic
  */
 void tcpServer::ReadBufferData()
 {
@@ -616,8 +541,8 @@ void tcpServer::ReadBufferData()
 /**
  * @brief
  * @author Pietro Califano
- * @date 2024-06-18
- * @test: PASSED for commModes > 0, 18-06-2024
+ * @date 
+ * // TODO (PC) Make this function generic
  */
 void tcpServer::WriteBufferData()
 {
@@ -673,17 +598,16 @@ void tcpServer::WriteBufferData()
  * @brief
  * @author Pietro Califano
  * @date 2024-06-19
- * @test: TODO
  */
-
-void tcpServer::CleanTempData()
-{
-    cout << "Cleaning temporary data after request handling..." << endl;
-    // Clear temp data by resetting to default values
-    lastMessageSize_ = 0;
-    commMode = commModeType::PROTOBUF;
-    bufferToReceiveSize_ = 0;
-    bufferToSendSize_ = 0;
-    memset(bufferToReceive_, 0, MAX_RECV_BUFFER_SIZE);
-    memset(bufferToSend_, 0, MAX_SEND_BUFFER_SIZE);
-}
+// DEVNOTE: Not sure this is required by generic implementation
+//void tcpServer::CleanTempData()
+//{
+//    cout << "Cleaning temporary data after request handling..." << endl;
+//    // Clear temp data by resetting to default values
+//    lastMessageSize_ = 0;
+//    commMode = commModeType::PROTOBUF;
+//    bufferToReceiveSize_ = 0;
+//    bufferToSendSize_ = 0;
+//    memset(bufferToReceive_, 0, MAX_RECV_BUFFER_SIZE);
+//    memset(bufferToSend_, 0, MAX_SEND_BUFFER_SIZE);
+//}

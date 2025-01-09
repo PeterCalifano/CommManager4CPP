@@ -11,7 +11,7 @@ string(REPLACE "src/" "" relative_path_without_src ${relative_path_from_root})
 install(FILES ${installable_headers} DESTINATION include/${project_name}/${relative_path_from_root})
 
 # Add src files to library
-set(SRC_PATTERN "*.cpp; *.cu")
+set(SRC_PATTERN "*.cpp; *.c")
 file(GLOB srcLibFiles_local ${CMAKE_CURRENT_SOURCE_DIR} ${SRC_PATTERN})
 message("Library src files found: ${srcLibFiles_local}")
 

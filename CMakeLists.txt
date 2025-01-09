@@ -9,14 +9,9 @@ cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
 set(CMAKE_BUILD_TYPE Debug)
 
 # PROJECT DEFINITION
-set(project_name "template_project")
+set(project_name "CommManager4CPP")
+set(languages CXX) # ACHTUNG: PTX code requires C language!
 
-option(ENABLE_OPTIX "Enable OptiX" OFF)
-set(languages CXX CUDA) # ACHTUNG: PTX code requires C language!
-
-if (ENABLE_OPTIX)
-    list(APPEND languages C)
-endif()
 # Set version number
 set(PROJECT_VERSION_MAJOR 0)
 set(PROJECT_VERSION_MINOR 1)
@@ -37,7 +32,6 @@ if(NOT DEFINED NUM_OMP_THREADS)
     set(NUM_OMP_THREADS 4 CACHE INTERNAL "Number of OpenMP threads to use")
 endif()
 
-option(USE_SYS_OPTIX_SDK "Use Optix system folder if specified" OFF)
 option(BUILD_PYTHON_WRAPPER "Build Python wrapper" OFF)
 option(BUILD_MATLAB_WRAPPER "Build MATLAB wrapper" OFF)
 option(ENABLE_SIMD "Enable SIMD instructions" ON)
@@ -46,7 +40,8 @@ option(ENABLE_SIMD "Enable SIMD instructions" ON)
 
 # COMPILER FLAGS
 string(TOUPPER "${CMAKE_BUILD_TYPE}" BUILD_TYPE_UPPER)
-if (NOT BUILD_TYPE_UPPER STREQUAL "DEBUG")      set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -O2")
+if (NOT BUILD_TYPE_UPPER STREQUAL "DEBUG")      
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -O2")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -O2")
 else()
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -O0 -g")
@@ -91,6 +86,7 @@ include(GtsamPrinting)
 if ( NOT (BUILD_PYTHON_WRAPPER OR BUILD_MATLAB_WRAPPER) )
   add_subdirectory(CppUnitLite) # ACHTUNG: when building with wrapper this MUST be excluded because GTSAM already includes it
 endif()
+
 # Add catch2 for unit testing
 find_package(Catch2)
 
