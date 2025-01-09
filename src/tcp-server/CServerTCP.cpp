@@ -146,12 +146,11 @@ int tcpServer::AcceptConnections()
                 cout << "Waiting for Request from client reading buffer data..." << endl;
                 HandleClientRequest(clientSocketDescriptor_);
 
-                // Clean temporary data after disconnection of client
-                CleanTempData();
+
             }
 
             // Close connection after having completed all the operations and client disconnection
-            controllerInstPtr_->DisableServos();
+
             cout << "Closing connection with client at " << &clientAddr_ << std::endl;
             close(clientSocketDescriptor_);
             isClientConnected = false;
@@ -159,7 +158,6 @@ int tcpServer::AcceptConnections()
         }
         catch (const std::exception &e)
         {
-            controllerInstPtr_->DisableServos();
             std::cerr << "Error while accepting and handling request due to exception: " << e.what() << endl;
             std::cout << "Closing connection with client at " << &clientAddr_ << std::endl;
             close(clientSocketDescriptor_);
@@ -239,127 +237,7 @@ void tcpServer::ProcessHardWiredMsg()
 
         if (isValid)
         {
-            cout << "Received payload message size: " << lastMessageSize_ << " VALID... executing request: GOTOPOSE" << endl;
-            int accessedBytes = 0; // Initialize counter of bytes for access to buffer using ptr arithmetic
 
-            // Execute GoToPose command
-            std::vector<ControlGroupId> controlGroupsVec = {ControlGroupId::R1, ControlGroupId::R2, ControlGroupId::B1};
-
-            std::vector<PositionData> groupsPosData;
-            PositionData waypointDataR1, waypointDataB1, waypointDataR2;
-
-            // CHECK to verify controllerInstPrt is valid
-            // TODO
-
-            cout << "---------------------- GOTOPOSE START ---------------------- \nPassing control to ControllerAPI: generating motion target... \n";
-            groupsPosData = controllerInstPtr_->ReadPositionData(ControlGroupId::ALL);
-            // Copy previously read to set all other parameters
-            waypointDataR1 = groupsPosData[0];
-            waypointDataB1 = groupsPosData[1];
-            waypointDataR2 = groupsPosData[2];
-
-            // Read desired coordinate type from buffer
-            CoordinateType targetCoordType;
-            memcpy(&targetCoordType, bufferToReceive_ + accessedBytes, __SIZEOF_INT__);
-            accessedBytes += __SIZEOF_INT__;
-
-            // Specify coordinates for R1 and R2 as specified by client
-            waypointDataR1.coordinateType = targetCoordType;
-            waypointDataR2.coordinateType = targetCoordType;
-
-            if (targetCoordType == CoordinateType::Pulse)
-            {
-                std::cout << "Using joint coordinates for motion target instead of Cartesian coordinates." << endl;
-                // throw std::invalid_argument("PULSE (JOINT) Coordinate type not supported by current version. Execution stop.");
-            }
-
-            // Determine size of arrays and bytes to read
-            int NUM_OF_ENTRIES = targetCoordType == CoordinateType::Pulse ? JOINTDATA_ENTRIES : POSDATA_ENTRIES;
-            int ROW_SIZE = NUM_OF_ENTRIES * __SIZEOF_DOUBLE__;
-
-            // Read motion speed from command buffer
-            double motionSpeed = 1;
-            memcpy(&motionSpeed, bufferToReceive_ + accessedBytes, __SIZEOF_DOUBLE__);
-            accessedBytes += __SIZEOF_DOUBLE__;
-
-            double tmpArrayR1[NUM_OF_ENTRIES], tmpArrayR2[NUM_OF_ENTRIES], tmpArrayB1[NUM_OF_ENTRIES];
-
-            // Modify PositionData fields from deserialized string
-            memcpy(&tmpArrayR1, bufferToReceive_ + accessedBytes, ROW_SIZE);
-            accessedBytes += ROW_SIZE;
-            memcpy(&tmpArrayR2, bufferToReceive_ + accessedBytes, ROW_SIZE);
-            accessedBytes += ROW_SIZE;
-            memcpy(&tmpArrayB1, bufferToReceive_ + accessedBytes, ROW_SIZE);
-            accessedBytes += ROW_SIZE;
-
-            if (targetCoordType == CoordinateType::Pulse)
-            {
-                std::cout << "Using joint coordinates for motion target instead of Cartesian coordinates." << endl;
-                // throw std::invalid_argument("PULSE (JOINT) Coordinate type not supported by current version. Execution stop.");
-
-                // Copy entries of tmpArray to axisData
-                memcpy(&waypointDataR1.axisData, tmpArrayR1, ROW_SIZE);
-                memcpy(&waypointDataR2.axisData, tmpArrayR2, ROW_SIZE);
-                memcpy(&waypointDataB1.axisData, tmpArrayB1, ROW_SIZE);
-            }
-            else
-            {
-                // Convert poseArrays into axisData
-                controllerInstPtr_->ConvertPoseArrayToAxisData(waypointDataR1.axisData, tmpArrayR1);
-                controllerInstPtr_->ConvertPoseArrayToAxisData(waypointDataR2.axisData, tmpArrayR2);
-                controllerInstPtr_->ConvertPoseArrayToAxisData(waypointDataB1.axisData, tmpArrayB1);
-            }
-
-            // #if (DEBUG_MODE)
-            cout << "\n\n---------------------- DEBUG ---------------------- ";
-            printf("\nR1 axis data: %3.2f, %3.2f, %3.2f, %5.1f, %5.1f, %5.1f, %5.1f, %5.1f", waypointDataR1.axisData[0], waypointDataR1.axisData[1], waypointDataR1.axisData[2], waypointDataR1.axisData[3], waypointDataR1.axisData[4], waypointDataR1.axisData[5], waypointDataR1.axisData[6], waypointDataR1.axisData[7]);
-            printf("\nR2 axis data: %3.2f, %3.2f, %3.2f, %5.1f, %5.1f, %5.1f, %5.1f, %5.1f", waypointDataR2.axisData[0], waypointDataR2.axisData[1], waypointDataR2.axisData[2], waypointDataR2.axisData[3], waypointDataR2.axisData[4], waypointDataR2.axisData[5], waypointDataR2.axisData[6], waypointDataR2.axisData[7]);
-            printf("\nB1 axis data: %3.2f, %3.2f, %3.2f, %5.1f, %5.1f, %5.1f, %5.1f, %5.1f\n\n", waypointDataB1.axisData[0], waypointDataB1.axisData[1], waypointDataB1.axisData[2], waypointDataB1.axisData[3], waypointDataB1.axisData[4], waypointDataB1.axisData[5], waypointDataB1.axisData[6], waypointDataB1.axisData[7]);
-            // #endif
-
-            //  Read user frame ID
-            int userFrameID = 0;
-            accessedBytes += __SIZEOF_INT__;
-            assert(userFrameID == 0);
-
-#if (DEBUG_MODE)
-            cout << "Using overridden user frame ID: " << userFrameID << endl;
-#endif
-
-            waypointDataR1.userCoordinateNumber = userFrameID;
-            waypointDataR2.userCoordinateNumber = userFrameID;
-            waypointDataB1.userCoordinateNumber = userFrameID;
-
-            cout << "Motion target ready for execution" << endl;
-
-            // ACHTUNG: ORDER IN groupsPosData changes HERE
-            std::vector<PositionData> motionGroupCommand;
-            motionGroupCommand.push_back(waypointDataR1);
-            motionGroupCommand.push_back(waypointDataR2);
-            motionGroupCommand.push_back(waypointDataB1);
-
-            cout << "Starting motion command execution with motion speed: " << motionSpeed << "... \n";
-
-            // Reset alarms if there is any
-            controllerInstPtr_->ResetAlarms();
-
-            // Clear trajectory to start from scratch
-            controllerInstPtr_->ClearTrajectory();
-
-            // Enable servos and command position
-            controllerInstPtr_->EnableServos();
-            controllerInstPtr_->CommandPositionDataTarget(motionGroupCommand, controlGroupsVec, motionSpeed);
-
-            cout << "\nMotion command COMPLETED." << endl;
-            cout << "---------------------- GOTOPOSE END ---------------------- " << endl;
-            cout << "\nSending pose data to client..." << endl;
-
-            // Read final position and serialize buffer to send feedback to client
-            std::this_thread::sleep_for(std::chrono::milliseconds(50));
-
-            groupsPosData = controllerInstPtr_->ReadPositionData(ControlGroupId::ALL);
-
-            ReadAndSerializeHardWiredPoseData(groupsPosData);
         }
         else
         {
@@ -379,17 +257,6 @@ void tcpServer::ProcessHardWiredMsg()
             // Read position and serialize buffer to send to client
             cout << "Asking data to ControllerAPI... ";
 
-            // Read desired coordinate type from buffer
-            CoordinateType targetCoordType = CoordinateType::Undefined;
-            memcpy(&targetCoordType, bufferToReceive_, __SIZEOF_INT__);
-
-            // Print type of coordinate to read
-            cout << "Reading position data in coordinates type: " << (int)targetCoordType << endl;
-
-            std::vector<PositionData> groupsPosData;
-            groupsPosData = controllerInstPtr_->ReadPositionData(ControlGroupId::ALL, targetCoordType);
-
-            ReadAndSerializeHardWiredPoseData(groupsPosData);
         }
         else
         {
@@ -408,19 +275,7 @@ void tcpServer::ProcessHardWiredMsg()
 
         if (isValid)
         {
-            cout << "Received payload message size: " << lastMessageSize_ << " VALID... executing request: GOTOHOME" << endl;
-            // Read position and serialize buffer to send to client
-            cout << "---------------------- GOTOHOME START ---------------------- \nPassing control to ControllerAPI... \n";
-            controllerInstPtr_->EnableServos();
-            controllerInstPtr_->GoBackToHome();
-            controllerInstPtr_->DisableServos();
-            cout << "\nMotion command COMPLETED." << endl;
-            cout << "---------------------- GOTOHOME END ---------------------- " << endl;
 
-            std::vector<PositionData> groupsPosData;
-            groupsPosData = controllerInstPtr_->ReadPositionData();
-
-            ReadAndSerializeHardWiredPoseData(groupsPosData);
         }
         else
         {

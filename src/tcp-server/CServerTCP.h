@@ -30,10 +30,6 @@
 #define close_socket(s) close(s)
 #endif
 
-// Custom includes
-#include <YMConnect.h> // Include the YMConnect header file
-#include <ControllerAPI.hpp>
-
 // Protobufs includes
 
 // DEFINES
@@ -54,7 +50,7 @@ class tcpServer
 {
 public:
     // CONSTRUCTOR, DEVNOTE: does this work? It should create a unique pointer to controller API within the server object
-    tcpServer(int portNumber_in, std::unique_ptr<ControllerAPI> controllerInst) : portNumber_(portNumber_in), controllerInstPtr_(std::move(controllerInst)) {};
+    tcpServer(int portNumber_in) : portNumber_(portNumber_in) {};
 
     // DESTRUCTOR
     ~tcpServer()
@@ -105,7 +101,6 @@ public:
 
 private:
     // DATA MEMBERS
-    std::unique_ptr<ControllerAPI> controllerInstPtr_; // ControllerAPI object
 
     struct sockaddr_in serverAddr_; // Server address struct
     struct sockaddr_in clientAddr_; // Client address struct
@@ -132,6 +127,4 @@ private:
     void ListenToConnection();
     bool ValidateReadBufferLength(int expectedBufferSize);
     bool ValidateWriteBufferLength(int expectedBufferSize);
-    void ReadAndSerializeHardWiredPoseData(std::vector<PositionData> groupsPosData);
-    void CleanTempData();
 };
